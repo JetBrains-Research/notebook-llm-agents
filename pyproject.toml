@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "notebookaiagents"
+name = "notebook-llm-agents"
 version = "0.1.0"
 description = ""
 authors = ["konstantgr <konstantin.grotov@gmail.com>"]
@@ -13,12 +13,7 @@ packages = [
 python = "^3.10"
 jupyter = "^1.0.0"
 grazie-api-gateway-client = "0.0.18"
-flask = "^3.0.1"
 rpdb = "^0.1.6"
-fastapi = "^0.109.0"
-uvicorn = "^0.27.0"
-requests = "^2.31.0"
-pydantic = "^2.5.3"
 python-multipart = "^0.0.6"
 python-dotenv = "^1.0.1"
 nbformat = "^5.9.2"
@@ -28,6 +23,16 @@ omegaconf = "^2.3.0"
 name = "space-grazie-ml"
 url = "https://packages.jetbrains.team/pypi/p/grazi/grazie-ml/simple"
 
+
+[tool.poetry.group.server.dependencies]
+pydantic = "^2.6.1"
+fastapi = "^0.109.2"
+requests = "^2.31.0"
+uvicorn = "^0.27.0.post1"
+
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
