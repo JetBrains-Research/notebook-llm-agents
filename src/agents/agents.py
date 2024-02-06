@@ -19,8 +19,13 @@ AVAILABLE_MODELS: dict[str, LLMProfile] = {
 
 class BaseAgent(ABC):
     @abstractmethod
-    def interact(self, **requests) -> str:
+    def interact(self, **requests: Any) -> str:
         pass
+
+
+class DummyAgent(BaseAgent):
+    def interact(self) -> str:
+        return "hi"
 
 
 class GrazieChatAgent(BaseAgent):
