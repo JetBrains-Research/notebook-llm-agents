@@ -1,0 +1,8 @@
+prompt_template: > 
+  <<SYS>>
+  {system}
+  <</SYS>>
+  [INST]
+  User: 
+  {user}
+  [/INST]
