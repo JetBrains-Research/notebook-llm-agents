@@ -19,4 +19,4 @@ if __name__ == "__main__":
 
     error = "ValueError"
     response = agent.interact(notebook_source, error)
-    print(response)
+    print(response.content)

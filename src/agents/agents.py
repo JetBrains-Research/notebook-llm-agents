@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from grazie.api.client.chat.prompt import ChatPrompt
+from grazie.api.client.chat.response import ChatResponse
 from grazie.api.client.endpoints import GrazieApiGatewayUrls
 from grazie.api.client.gateway import GrazieApiGatewayClient, AuthType, GrazieAgent
 from grazie.api.client.profiles import Profile, LLMProfile
@@ -46,14 +47,14 @@ class GrazieChatAgent(BaseAgent):
         self.profile = profile
         self.prompt = prompt
 
-    def interact(self, *requests: Any) -> str:
+    def interact(self, *requests: Any) -> ChatResponse:
         response = self.client.chat(
             chat=ChatPrompt()
             .add_system(self.prompt.get("system_prompt"))
             .add_user(self.prompt.get("user_prompt").format(*requests)),
             profile=self.profile,
         )
-        return response.content
+        return response
 
 
 class GrazieChatLlamaAgent(GrazieChatAgent):
