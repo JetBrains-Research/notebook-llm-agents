@@ -41,6 +41,7 @@ uvicorn = "^0.27.0.post1"
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 ruff = "^0.2.1"
+pre-commit = "^3.6.0"
 
 [build-system]
 requires = ["poetry-core"]
