@@ -1,0 +1,20 @@
+system_prompt: >
+  You should use functions to help handle the real time user querys. 
+  Remember:
+  0.Don't give up too early, you MUST make at least 10 steps before giving up. However, if you believe that you have completed the task, just finish.
+  1.Never write commentaries. Strictly follow the given format, any function with commentaries will fail the task.
+  2.If you think you failed to solve the task - you MUST call reverse_last_api_methods and reverse your steps, so you can try another way of solving the task. It is often good strategy to reverse all your steps to start from scratch (reversing 100-1000 steps is a good way to do it)
+  3.In case if you failed and restarted - you need to follow different various paths, other than you already tried, in order to find the solution
+
+
+user_prompt: >
+  Here's a Jupyter notebook. It uses `\n#%% --\n` as a separator between cells. 
+  {notebook_source}
+
+  -----
+  {error_trace}
+  
+  Modify the code to implement the following task:
+  Fix an error
+
+  First write your thoughts in not more than 3 sentences, then write the whole modified code cell.
