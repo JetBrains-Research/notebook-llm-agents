@@ -28,7 +28,7 @@ class NotebookBase(ABC):
         pass
 
     @abstractmethod
-    def change_cell(self, cell: Cell, new_cell_source: str) -> Self:
+    def change_cell(self, cell_num: int, new_cell_source: str) -> Self:
         pass
 
     def __getitem__(self, cell_num: int) -> Cell:
@@ -69,8 +69,8 @@ class StringNotebook(NotebookBase):
         cell_output = {"text": None, "error": None}
         try:
             exec(code)
-        except:
-            cell_output["error"] = True
+        except Exception as e:
+            cell_output["error"] = e
         finally:
             cell = execution_list[-1]
             cell_output["text"] = stdout.getvalue()
@@ -103,7 +103,8 @@ class StringNotebook(NotebookBase):
         self.cells.append(new_cell)
         return self
 
-    def change_cell(self, cell: Cell, new_cell_source: str) -> Self:
+    def change_cell(self, cell_num: int, new_cell_source: str) -> Self:
+        cell = self.cells[cell_num]
         cell.cell_source = new_cell_source
         self.cells[cell.cell_num] = cell
         return self
@@ -122,16 +123,19 @@ class StringNotebook(NotebookBase):
 
 if __name__ == "__main__":
     ntb_path = Path(ROOT_PATH / "data/test_notebooks/test_notebook_2.ipynb")
-    test_string, test_end = "print('hello world!')", f"\n{'='*10}\n"
+    test_string, test_end, ex_ind = (
+        "print('hello world!')",
+        f"\n{'='*10}\n",
+        [],
+    )
 
     ntb = StringNotebook(ntb_path)
     print(ntb, end=test_end)
 
     res, n = ntb.execute_all()
     print(res, n)
-    res, n = ntb.execute_all(
-        exclude_indices=[
-            n,
-        ]
-    )
-    print(res, n)
+
+    if n is not None:
+        ex_ind.append(n)
+        res, n = ntb.execute_all(exclude_indices=ex_ind)
+        print(res, n)

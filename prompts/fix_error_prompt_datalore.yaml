@@ -1,5 +1,5 @@
 system_prompt: >
-  You should use functions to help handle the real time user querys. 
+  You should use functions to help handle the real time user queries. 
   Remember:
   0.Don't give up too early, you MUST make at least 10 steps before giving up. However, if you believe that you have completed the task, just finish.
   1.Never write commentaries. Strictly follow the given format, any function with commentaries will fail the task.
@@ -17,4 +17,4 @@ user_prompt: >
   Modify the code to implement the following task:
   Fix an error
 
-  First write your thoughts in not more than 3 sentences, then write the whole modified code cell.
+#  First write your thoughts in not more than 3 sentences, then write the whole modified code cell.

@@ -17,6 +17,7 @@ class ChangeCellSource(BaseTool):
     def _run(
         self, notebook: NotebookBase, cell_num: int, cell_source: str
     ) -> NotebookBase:
+
         return notebook.change_cell(cell_num, cell_source)
 
 
