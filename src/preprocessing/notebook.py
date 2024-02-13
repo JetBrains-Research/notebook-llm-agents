@@ -3,7 +3,7 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Self
+from typing import Optional, Self, Any
 
 from tqdm import tqdm
 
@@ -15,12 +15,12 @@ from src.preprocessing.process_notebook import notebook_to_string
 class Cell:
     cell_num: int
     cell_source: str
-    cell_output: Optional[str] = None
+    cell_output: Optional[dict[str, str]] = None
 
 
 class NotebookBase(ABC):
     @abstractmethod
-    def execute_cell(self, cell_num: int) -> Cell:
+    def execute_cell(self, **kwargs: Any) -> Cell:
         pass
 
     @abstractmethod
@@ -28,7 +28,7 @@ class NotebookBase(ABC):
         pass
 
     @abstractmethod
-    def change_cell(self, cell_num: int, new_cell_source: str) -> Self:
+    def change_cell(self, cell: Cell, new_cell_source: str) -> Self:
         pass
 
     def __getitem__(self, cell_num: int) -> Cell:
@@ -36,9 +36,6 @@ class NotebookBase(ABC):
 
 
 class StringNotebook(NotebookBase):
-    def execute_cell(self, cell_num: int) -> Cell:
-        pass
-
     def __init__(self, notebook_path: Path, sep: str = "\n#%% --\n"):
         self.notebook_path = notebook_path
         self.sep = sep
@@ -53,14 +50,17 @@ class StringNotebook(NotebookBase):
         ]
         return cells
 
-    def _prepare_for_execution(self, cells: list[Cell]):
-        source = self.sep.join([f"{cell.cell_source}" for cell in cells])
-        return source
+    def _prepare_source(self, execution_list: list[Cell]) -> str:
+        return self.sep.join([cell.cell_source for cell in execution_list])
 
-    def execute_cells(self, cells: list[Cell]) -> Cell:
-        code = self._prepare_for_execution(cells)
-        print(code)
-        print("." * 20)
+    def _prepare_execution_list(
+        self, exclude_indices: Optional[list[int]] = None
+    ) -> list[Cell]:
+        exclude_indices = exclude_indices if exclude_indices is not None else []
+        return list(filter(lambda x: x.cell_num not in exclude_indices, self.cells))
+
+    def execute_cell(self, execution_list: list[Cell]) -> Cell:
+        code = self._prepare_source(execution_list)
         stdout, stderr = io.StringIO(), io.StringIO()
 
         prev_stdout, prev_stderr = sys.stdout, sys.stderr
@@ -72,7 +72,7 @@ class StringNotebook(NotebookBase):
         except:
             cell_output["error"] = True
         finally:
-            cell = cells[-1]
+            cell = execution_list[-1]
             cell_output["text"] = stdout.getvalue()
             cell.cell_output = cell_output
 
@@ -83,21 +83,19 @@ class StringNotebook(NotebookBase):
             return cell
 
     def execute_all(
-        self, progress_bar: bool = True, exclude_nums: Optional[list[int]] = None
+        self, progress_bar: bool = True, exclude_indices: Optional[list[int]] = None
     ) -> tuple[bool, Optional[int]]:
-        chosen_cells = (
-            self.cells
-            if exclude_nums is None
-            else [obj for i, obj in enumerate(self.cells) if i not in exclude_nums]
-        )
+        execution_list = self._prepare_execution_list(exclude_indices=exclude_indices)
+        gen = enumerate(execution_list)
+        gen = tqdm(gen) if progress_bar else gen
 
-        gen = tqdm(enumerate(chosen_cells)) if progress_bar else enumerate(chosen_cells)
-        for num, _ in gen:
-            resulted_cell = self.execute_cells(chosen_cells[: num + 1])
+        for idx, _ in gen:
+            cell_sequence = execution_list[: idx + 1]
+            resulted_cell = self.execute_cell(cell_sequence)
 
-            if resulted_cell.cell_output.get("error") is not None:
-                print(f"Cell with num {num} caused an error")
-                return False, num
+            if resulted_cell.cell_output.get("error", None) is not None:
+                print(f"Cell with num {idx} caused an error")
+                return False, resulted_cell.cell_num
         return True, None
 
     def add_cell(self, cell_source: str) -> Self:
@@ -105,8 +103,9 @@ class StringNotebook(NotebookBase):
         self.cells.append(new_cell)
         return self
 
-    def change_cell(self, cell_num: int, new_cell_source: str) -> Self:
-        self.cells[cell_num] = Cell(cell_num=cell_num, cell_source=new_cell_source)
+    def change_cell(self, cell: Cell, new_cell_source: str) -> Self:
+        cell.cell_source = new_cell_source
+        self.cells[cell.cell_num] = cell
         return self
 
     def __getitem__(self, cell_num: int) -> Cell:
@@ -130,5 +129,9 @@ if __name__ == "__main__":
 
     res, n = ntb.execute_all()
     print(res, n)
-    res, n = ntb.execute_all(exclude_nums=(n,))
+    res, n = ntb.execute_all(
+        exclude_indices=[
+            n,
+        ]
+    )
     print(res, n)
