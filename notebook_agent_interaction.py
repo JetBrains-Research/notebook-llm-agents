@@ -4,9 +4,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from omegaconf import OmegaConf
 
-from src.agents.agents import GrazieChatLlamaAgent, GrazieChatAgent
+from src.agents.agents import GrazieChatAgent
 from src.preprocessing.notebook import StringNotebook
-from src.preprocessing.process_notebook import notebook_to_string
+from src.preprocessing.process_notebook import string_to_notebook
 
 env = load_dotenv()
 
@@ -28,4 +28,6 @@ if __name__ == "__main__":
         )
         step += 1
         success, n = ntb.execute_all()
+
+    string_to_notebook(ntb.__str__(), Path("data/processed_notebooks"), notebook_path.name)
     print(ntb)
