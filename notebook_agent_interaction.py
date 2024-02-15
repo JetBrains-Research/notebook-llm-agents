@@ -14,7 +14,7 @@ if __name__ == "__main__":
     prompt_config = OmegaConf.load("prompts/fix_error_prompt_datalore.yaml")
     agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
 
-    notebook_path = Path("data/test_notebooks/test_notebook_2.ipynb")
+    notebook_path = Path("data/test_notebooks/NameError_iterative_imputer.ipynb")
     ntb = StringNotebook(notebook_path)
     success, n = ntb.execute_all()
 
@@ -22,6 +22,7 @@ if __name__ == "__main__":
     while not success and step < 6:
         print(f"STEP is {step}")
         error_trace = ntb[n].cell_output.get("error")
+        print(error_trace)
         ntb_source = ntb.__str__()
         ntb = agent.interact(
             notebook=ntb, notebook_source=ntb_source, error_trace=error_trace
@@ -29,5 +30,7 @@ if __name__ == "__main__":
         step += 1
         success, n = ntb.execute_all()
 
-    string_to_notebook(ntb.__str__(), Path("data/processed_notebooks"), notebook_path.name)
+    string_to_notebook(
+        ntb.__str__(), Path("data/processed_notebooks"), notebook_path.name
+    )
     print(ntb)

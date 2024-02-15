@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from grazie.api.client.chat.prompt import ChatPrompt
-from grazie.api.client.chat.response import ChatResponse
 from grazie.api.client.endpoints import GrazieApiGatewayUrls
 from grazie.api.client.gateway import GrazieApiGatewayClient, AuthType, GrazieAgent
 from grazie.api.client.llm_functions import FunctionDefinition
@@ -75,21 +74,21 @@ class GrazieChatAgent(BaseAgent):
         self.profile = profile
         self.prompt = prompt
 
-        self.tools = {
-            "change_cell": ChangeCellSource()
-        }
+        self.tools = {"change_cell": ChangeCellSource()}
 
     def interact(self, notebook: NotebookBase, **requests: Any) -> NotebookBase:
         response = self.client.chat(
             chat=ChatPrompt()
-            .add_system(self.prompt.get("system_prompt") + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS")
-            .add_user(
-                self.prompt.get("user_prompt").format(**requests)
-            ),
+            .add_system(
+                self.prompt.get("system_prompt")
+                + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
+            )
+            .add_user(self.prompt.get("user_prompt").format(**requests)),
             profile=self.profile,
-            parameters=function_params
+            parameters=function_params,
         )
         params = json.loads(response.content)
+        print(response.function_call, response.content)
         notebook = self.tools[response.function_call]._run(notebook=notebook, **params)
         return notebook
 
