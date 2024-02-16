@@ -20,17 +20,21 @@ class SeleniumNotebook(NotebookBase):
         driver_path: Path,
         server: Path,
         sep: str = "\n#%% --\n",
+        headless: bool = False,
     ):
         self.notebook_path = notebook_path
         self.driver_path = driver_path
         self.server = server
         self.sep = sep
+        self.headless = headless
 
         self.driver = None
 
     def __enter__(self):
         service = Service(executable_path=str(self.driver_path))
         options = webdriver.ChromeOptions()
+        if self.headless:
+            options.add_argument("headless")
         self.driver = webdriver.Chrome(service=service, options=options)
         self.driver.get(str(self.server / "notebooks/" / self.notebook_path))
         sleep(5)
@@ -66,11 +70,11 @@ class SeleniumNotebook(NotebookBase):
                     By.XPATH,
                     ".//*[contains(text(), '[*]') or contains(text(), 'In [*]')]",
                 )
-                print(f"Cell is still running. Waiting for {wait_time} seconds.")
+                # print(f"Cell is still running. Waiting for {wait_time} seconds.")
                 sleep(delta)
                 wait_time += delta
             except NoSuchElementException:
-                print("Cell finished execution.")
+                # print("Cell finished execution.")
                 break
 
     def execute_cell(self, cell: WebElement):
@@ -107,7 +111,7 @@ class SeleniumNotebook(NotebookBase):
             sleep(0.5)
 
             if error:
-                print(f"Cell with num {num} caused an error")
+                print(f"[ERROR] Cell with num {num} caused an error")
                 return False, num
         return True, None
 
@@ -139,6 +143,16 @@ class SeleniumNotebook(NotebookBase):
             )
 
         return self.cells[cell_num]
+
+    def restart_kernel(self):
+        actions = (
+            ActionChains(self.driver)
+            .send_keys(Keys.ESCAPE)
+            .send_keys("0")
+            .send_keys("0")
+            .send_keys(Keys.RETURN)
+        )
+        actions.perform()
 
     @staticmethod
     def get_cell_source(cell: WebElement) -> str:

@@ -15,6 +15,6 @@ user_prompt: >
   {error_trace}
   
   Modify the code to implement the following task:
-  Fix an error
+  Fix an error. Note that cell starting enumerate from 0. Totally notebook contains {cell_number} cells.
 
 #  First write your thoughts in not more than 3 sentences, then write the whole modified code cell.

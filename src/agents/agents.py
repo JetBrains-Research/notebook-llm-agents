@@ -88,7 +88,9 @@ class GrazieChatAgent(BaseAgent):
             parameters=function_params,
         )
         params = json.loads(response.content)
-        print(response.function_call, response.content)
+        print(f"[FUNC] {response.function_call}")
+        print(f"[FUNC PARAMS] {params}")
+        # print(response.function_call, response.content)
         notebook = self.tools[response.function_call]._run(notebook=notebook, **params)
         return notebook
 
