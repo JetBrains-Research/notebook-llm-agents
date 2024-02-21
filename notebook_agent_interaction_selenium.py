@@ -15,13 +15,8 @@ if __name__ == "__main__":
     prompt_config = OmegaConf.load("prompts/fix_error_prompt_datalore.yaml")
     agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
 
-    # notebook_path = Path("data/processed_notebooks/test_selenium.ipynb")
-    notebook_path = Path("data/test_notebooks/NameError_iterative_imputer.ipynb")
-
+    notebook_path = Path("test_notebooks/test_notebook.ipynb")
     notebook_server = Path("http://localhost:8888/")
-
-    # ntb = StringNotebook(notebook_path)
-    # success, n = ntb.execute_all()
 
     with SeleniumNotebook(
         driver_path=Path(os.environ["CHROMIUM_DRIVER_PATH"]),
@@ -30,17 +25,14 @@ if __name__ == "__main__":
         headless=True,
     ) as ntb:
         ntb.restart_kernel()
-        # print(ntb)
         step, success = 0, False
         while not success and step < 6:
             print(f"[START STEP] {step}")
             error, num = ntb.execute_all()
-            # print(error)
             if num is not None:
                 print(ntb.get_cell_output(ntb.cells[num]))
 
             error_trace = ntb.get_cell_output(ntb.cells[num])
-            # print(error_trace)
             ntb_source = ntb.__str__()
 
             _ = agent.interact(
