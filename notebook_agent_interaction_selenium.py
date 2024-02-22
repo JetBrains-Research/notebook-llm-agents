@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from time import sleep
 
+import docker
 from dotenv import load_dotenv
 from omegaconf import OmegaConf
 
@@ -15,13 +16,18 @@ if __name__ == "__main__":
     prompt_config = OmegaConf.load("prompts/fix_error_prompt_datalore.yaml")
     agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
 
+    client = docker.from_env()
+    container = client.containers.run(
+        "agent-jupyter-interaction-docker-image", ports={"8888/tcp": 8888}, detach=True
+    )
+
     notebook_path = Path("test_notebooks/test_notebook.ipynb")
     notebook_server = Path("http://localhost:8888/")
 
     with SeleniumNotebook(
         driver_path=Path(os.environ["CHROMIUM_DRIVER_PATH"]),
         notebook_path=notebook_path,
-        server=notebook_server,  # TODO: Add function for server initialization
+        server=notebook_server,
         headless=True,
     ) as ntb:
         ntb.restart_kernel()
@@ -55,3 +61,6 @@ if __name__ == "__main__":
             )
 
         sleep(5)
+
+    container.stop()
+    container.remove()

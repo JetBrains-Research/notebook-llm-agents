@@ -117,22 +117,17 @@ class SeleniumNotebook(NotebookBase):
 
     def change_cell(self, cell_num, new_cell_content: str):
         cell = self.cells[cell_num]
-        # find the editor area to input text
         edit_area = cell.find_element(By.XPATH, ".//div[@class='cm-content']")
         actions = ActionChains(self.driver)
 
-        # focus on the edit_area
         actions.move_to_element(edit_area).click(edit_area)
 
-        # clear the edit_area
         actions.key_down(Keys.COMMAND).send_keys("a").key_up(Keys.COMMAND).send_keys(
             Keys.BACKSPACE
         )
 
-        # type the new_content
         actions.send_keys(new_cell_content)
 
-        # perform the action chain
         actions.perform()
         sleep(1)
 

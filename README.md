@@ -23,7 +23,12 @@ poetry install
 
 ## How to Use
 
-TODO
+```shell
+cd remote_environment
+docker build -t agent-jupyter-interaction-docker-image .
+cd .. 
+poetry run python3 notebook_agent_interaction_selenium.py
+```
 
 ---
 
