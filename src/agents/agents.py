@@ -1,4 +1,5 @@
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -14,6 +15,8 @@ from omegaconf import DictConfig, OmegaConf
 from src import ROOT_PATH
 from src.preprocessing.notebook import NotebookBase
 from src.tools.notebook_tools import ChangeCellSource
+
+log = logging.getLogger(__name__)
 
 AVAILABLE_MODELS: dict[str, LLMProfile] = {
     "llama_13b": Profile.GRAZIE_CHAT_LLAMA_V2_13b,
@@ -88,9 +91,9 @@ class GrazieChatAgent(BaseAgent):
             parameters=function_params,
         )
         params = json.loads(response.content)
-        print(f"[FUNC] {response.function_call}")
-        print(f"[FUNC PARAMS] {params}")
-        # print(response.function_call, response.content)
+        log.info(f"[FUNC] {response.function_call}")
+        log.info(f"[FUNC PARAMS] {params}")
+
         notebook = self.tools[response.function_call]._run(notebook=notebook, **params)
         return notebook
 

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from time import sleep
 from typing import Optional
@@ -20,6 +21,8 @@ from src.preprocessing import (
 )
 from src.preprocessing.notebook import NotebookBase
 
+log = logging.getLogger(__name__)
+
 
 class SeleniumNotebook(NotebookBase):
     def __init__(
@@ -38,11 +41,12 @@ class SeleniumNotebook(NotebookBase):
 
         self.driver = None
 
-    def __enter__(self, sleep_time: float = 5.0):
-        service, options = (
-            Service(executable_path=str(self.driver_path)),
-            webdriver.ChromeOptions(),
-        )
+    def __enter__(self):
+        log.info("[START_SESSION]")
+        sleep_time: float = 5.0
+        service = Service(executable_path=str(self.driver_path))
+        options = webdriver.ChromeOptions()
+
         if self.headless:
             options.add_argument("headless")
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -51,6 +55,7 @@ class SeleniumNotebook(NotebookBase):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        log.info("[FINISH_SESSION]")
         self.driver.quit()
 
     @property
@@ -107,12 +112,14 @@ class SeleniumNotebook(NotebookBase):
 
     def execute_all(self, sleep_time: float = 0.5):
         for num, cell in enumerate(self.cells):
+            log.info(f"[ACTION] EXECUTE CELL {num}")
             error, output = self.execute_cell(cell)
             sleep(sleep_time)
 
             if error:
-                print(f"[ERROR] Cell with num {num} caused an error")
+                log.info(f"[ERROR] Cell with num {num} caused an error".upper())
                 return False, num
+        log.info("[NO ERRORS]")
         return True, None
 
     def change_cell(self, cell_num, new_cell_content: str):
@@ -129,6 +136,8 @@ class SeleniumNotebook(NotebookBase):
         actions.send_keys(new_cell_content)
 
         actions.perform()
+        log.info(f"[ACTION] CHANGE SOURCE OF CELL {cell_num} ")
+
         sleep(1)
 
     def __getitem__(self, cell_num: int):
