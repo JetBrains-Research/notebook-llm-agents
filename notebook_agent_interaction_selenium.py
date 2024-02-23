@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from time import sleep
@@ -9,8 +10,11 @@ from omegaconf import OmegaConf
 from src.agents.agents import GrazieChatAgent
 from src.preprocessing.process_notebook import string_to_notebook
 from src.preprocessing.selenium_notebook import SeleniumNotebook
+from src import ROOT_PATH
 
 env = load_dotenv()
+log = logging.getLogger(__name__)
+
 
 if __name__ == "__main__":
     prompt_config = OmegaConf.load("prompts/fix_error_prompt_datalore.yaml")
@@ -18,12 +22,14 @@ if __name__ == "__main__":
 
     client = docker.from_env()
     container = client.containers.run(
-        "agent-jupyter-interaction-docker-image", ports={"8888/tcp": 8888}, detach=True
+        "agent-jupyter-interaction-docker-image",
+        ports={"8888/tcp": 8888},
+        volumes={ROOT_PATH / "data": {"bind": "/app/data", "mode": "rw"}},
+        detach=True,
     )
-    sleep(2)
-    notebook_path = Path(
-        "test_notebooks/AttributeError_FeatureSelection_SelectFromModel.ipynb"
-    )
+
+    sleep(5)
+    notebook_path = Path("data/test_notebooks/test_notebook.ipynb")
     notebook_server = Path("http://localhost:8888/")
 
     try:
@@ -51,7 +57,7 @@ if __name__ == "__main__":
                 step += 1
 
             if success:
-                print("[SOLVED] Error successfully solved")
+                log.info("[SOLVED] Error successfully solved".upper())
                 ntb.add_cell()
                 ntb.change_cell(-1, "# ERROR SUCCESSFULLY SOLVED")
                 string_to_notebook(
@@ -59,8 +65,8 @@ if __name__ == "__main__":
                     Path("data/processed_notebooks"),
                     "solved_" + notebook_path.name,
                 )
-
             sleep(5)
+
     except Exception as e:
         print(e)
     finally:
