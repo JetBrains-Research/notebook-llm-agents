@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
-    prompt_config = OmegaConf.load("prompts/fix_error_prompt_datalore.yaml")
+    prompt_config = OmegaConf.load("prompts/fix_error_prompt_custom.yaml")
     agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
 
     client = docker.from_env()
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     )
 
     sleep(5)
-    notebook_path = Path("data/test_notebooks/test_notebook.ipynb")
+    notebook_path = Path("data/test_notebooks/NameError_list_of_lists_to_list.ipynb")
     notebook_server = Path("http://localhost:8888/")
 
     try:
@@ -46,11 +46,19 @@ if __name__ == "__main__":
                 error_trace = ntb.get_cell_output(ntb.cells[num])
                 ntb_source = ntb.__str__()
 
+                # _ = agent.interact(
+                #     notebook=ntb,
+                #     notebook_source=ntb_source,
+                #     error_trace=error_trace,
+                #     cell_number=len(ntb.cells),
+                # )
                 _ = agent.interact(
                     notebook=ntb,
                     notebook_source=ntb_source,
                     error_trace=error_trace,
                     cell_number=len(ntb.cells),
+                    cell_amount=len(ntb.cells),
+                    cell_num=num,
                 )
                 is_error, error_trace = ntb.execute_cell(ntb.cells[num])
                 success = not is_error

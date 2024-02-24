@@ -14,7 +14,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from src import ROOT_PATH
 from src.preprocessing.notebook import NotebookBase
-from src.tools.notebook_tools import ChangeCellSource
+from src.tools.notebook_tools import ChangeCellSource, AddNewCell, ExecuteCell
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ function_params = {
     LLMParameters.Functions: Parameters.JsonValue.from_functions(
         FunctionDefinition(
             name="change_cell",
-            description="Change source of the existing cell in the notebook and execute it",
+            description="Change source of the existing cell in the notebook and execute it, returns the output of the cell",
         )
         .add_argument(
             name="cell_num",
@@ -54,7 +54,32 @@ function_params = {
             description="New source of the cell which should be changed",
             _type=FunctionDefinition.FunctionParameterTypes.STRING,
             required=True,
+        ),
+        FunctionDefinition(
+            name="execute_cell",
+            description="Executing cell in the notebook without changing its code, returns the output of the cell ",
+        ).add_argument(
+            name="cell_num",
+            description="Number of the cell in the notebook (starting from 0).",
+            _type=FunctionDefinition.FunctionParameterTypes.INTEGER,
+            required=True,
+        ),
+        FunctionDefinition(
+            name="add_cell",
+            description="Append new cell in the notebook and execute it, returns the output of the cell ",
         )
+        .add_argument(
+            name="cell_num",
+            description="Number of the cell in the notebook (starting from 0).",
+            _type=FunctionDefinition.FunctionParameterTypes.INTEGER,
+            required=True,
+        )
+        .add_argument(
+            name="cell_source",
+            description="New source of the cell which should be changed",
+            _type=FunctionDefinition.FunctionParameterTypes.STRING,
+            required=True,
+        ),
     ),
 }
 
@@ -77,7 +102,11 @@ class GrazieChatAgent(BaseAgent):
         self.profile = profile
         self.prompt = prompt
 
-        self.tools = {"change_cell": ChangeCellSource()}
+        self.tools = {
+            "change_cell": ChangeCellSource(),
+            "execute_cell": ExecuteCell(),
+            "add_cell": AddNewCell(),
+        }
 
     def interact(self, notebook: NotebookBase, **requests: Any) -> NotebookBase:
         response = self.client.chat(
