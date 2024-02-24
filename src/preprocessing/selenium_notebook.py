@@ -47,6 +47,7 @@ class SeleniumNotebook(NotebookBase):
         service = Service(executable_path=str(self.driver_path))
         options = webdriver.ChromeOptions()
 
+        sleep(sleep_time)
         if self.headless:
             options.add_argument("headless")
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -108,6 +109,7 @@ class SeleniumNotebook(NotebookBase):
         )
         cell.click()
         self.driver.find_element(By.XPATH, INSERT_CELL_BELOW_ELEMENT).click()
+        log.info("[ACTION] CREATE CELL")
         sleep(sleep_time)
 
     def execute_all(self, sleep_time: float = 0.5):
@@ -158,6 +160,7 @@ class SeleniumNotebook(NotebookBase):
             .send_keys(Keys.RETURN)
         )
         actions.perform()
+        log.info("[ACTION] RESTART KERNEL")
 
     @staticmethod
     def get_cell_source(cell: WebElement) -> str:

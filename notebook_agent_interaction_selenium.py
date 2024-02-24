@@ -30,16 +30,18 @@ if __name__ == "__main__":
     )
 
     sleep(5)
-    notebook_path = Path("data/test_notebooks/NameError_list_of_lists_to_list.ipynb")
+    notebook_path = Path("data/test_notebooks/NameError_HoD_stratify.ipynb")
     notebook_server = Path("http://localhost:8888/")
 
+    selenium_notebook = SeleniumNotebook(
+        driver_path=Path(os.environ["CHROMIUM_DRIVER_PATH"]),
+        notebook_path=notebook_path,
+        server=notebook_server,
+        headless=False,
+    )
+
     try:
-        with SeleniumNotebook(
-            driver_path=Path(os.environ["CHROMIUM_DRIVER_PATH"]),
-            notebook_path=notebook_path,
-            server=notebook_server,
-            headless=False,
-        ) as ntb:
+        with selenium_notebook as ntb:
             ntb.restart_kernel()
             (success, num), step = ntb.execute_all(), 0
 
@@ -64,8 +66,9 @@ if __name__ == "__main__":
                     cell_amount=len(ntb.cells),
                     cell_num=num,
                 )
-                if isinstance(output, bool):
-                    success = not output
+                if output == "[finish_function]":
+                    error, _ = ntb.execute_cell(ntb.cells[num])
+                    success = not error
                     break
 
                 step += 1

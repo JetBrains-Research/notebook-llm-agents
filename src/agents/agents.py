@@ -139,8 +139,7 @@ class GrazieChatAgent(BaseAgent):
         log.info(f"[FUNC PARAMS] {params}")
 
         if response.function_call == "finish":
-            error, _ = notebook.execute_cell(notebook.cells[self.error_cell_num])
-            return error
+            return "[finish_function]"
 
         if response.function_call is not None:
             self.chat.add_assistant_function(response.function_call, response.content)
