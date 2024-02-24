@@ -80,6 +80,10 @@ function_params = {
             _type=FunctionDefinition.FunctionParameterTypes.STRING,
             required=True,
         ),
+        FunctionDefinition(
+            name="finish",
+            description="Indicates finishing solving the error and re-executed cell with the error to check it.",
+        ),
     ),
 }
 
@@ -107,24 +111,43 @@ class GrazieChatAgent(BaseAgent):
             "execute_cell": ExecuteCell(),
             "add_cell": AddNewCell(),
         }
+        self.chat = ChatPrompt().add_system(
+            self.prompt.get("system_prompt")
+            + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
+        )
+        self.error_cell_num = None
 
-    def interact(self, notebook: NotebookBase, **requests: Any) -> NotebookBase:
-        response = self.client.chat(
-            chat=ChatPrompt()
-            .add_system(
-                self.prompt.get("system_prompt")
-                + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
+    def interact(self, notebook: NotebookBase, output=None, **requests: Any):
+        if output is not None:
+            self.chat = self.chat.add_user(f"------\n Output is {output}\n------\n")
+        elif requests is not None:
+            if "cell_num" in requests:
+                self.error_cell_num = requests["cell_num"]
+
+            self.chat = self.chat.add_user(
+                self.prompt.get("user_prompt").format(**requests)
             )
-            .add_user(self.prompt.get("user_prompt").format(**requests)),
+
+        response = self.client.chat(
+            chat=self.chat,
             profile=self.profile,
             parameters=function_params,
         )
+
         params = json.loads(response.content)
         log.info(f"[FUNC] {response.function_call}")
         log.info(f"[FUNC PARAMS] {params}")
 
-        notebook = self.tools[response.function_call]._run(notebook=notebook, **params)
-        return notebook
+        if response.function_call == "finish":
+            error, _ = notebook.execute_cell(notebook.cells[self.error_cell_num])
+            return error
+
+        if response.function_call is not None:
+            self.chat.add_assistant_function(response.function_call, response.content)
+
+        output = self.tools[response.function_call]._run(notebook=notebook, **params)
+
+        return output
 
 
 class GrazieChatLlamaAgent(GrazieChatAgent):

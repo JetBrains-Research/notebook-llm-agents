@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 from pathlib import Path
 from time import sleep
 
@@ -42,7 +43,9 @@ if __name__ == "__main__":
             ntb.restart_kernel()
             (success, num), step = ntb.execute_all(), 0
 
+            output = None
             while not success and step < 6:
+                log.info(f"[STEP] Step {step} started")
                 error_trace = ntb.get_cell_output(ntb.cells[num])
                 ntb_source = ntb.__str__()
 
@@ -52,16 +55,19 @@ if __name__ == "__main__":
                 #     error_trace=error_trace,
                 #     cell_number=len(ntb.cells),
                 # )
-                _ = agent.interact(
+                output = agent.interact(
                     notebook=ntb,
+                    output=output,
                     notebook_source=ntb_source,
                     error_trace=error_trace,
                     cell_number=len(ntb.cells),
                     cell_amount=len(ntb.cells),
                     cell_num=num,
                 )
-                is_error, error_trace = ntb.execute_cell(ntb.cells[num])
-                success = not is_error
+                if isinstance(output, bool):
+                    success = not output
+                    break
+
                 step += 1
 
             if success:
@@ -73,10 +79,13 @@ if __name__ == "__main__":
                     Path("data/processed_notebooks"),
                     "solved_" + notebook_path.name,
                 )
+            else:
+                log.info("[NOT SOLVED] Agent could solve the error".upper())
+
             sleep(5)
 
-    except Exception as e:
-        print(e)
+    except Exception:
+        traceback.print_exc()
     finally:
         container.stop()
         container.remove()
