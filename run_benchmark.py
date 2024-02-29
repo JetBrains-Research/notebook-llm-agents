@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
 
-from single_notebook_interaction import init_agent, SafeDockerContainer
+from omegaconf import OmegaConf
+
+from single_notebook_interaction import SafeDockerContainer
 from src import ROOT_PATH
+from src.agents.agents import GrazieChatAgent
 from src.benchmark.solving_benchmark import ErrorSolvingBenchmark
 
 if __name__ == "__main__":
@@ -22,7 +25,8 @@ if __name__ == "__main__":
     notebook_path_list = tuple(Path("data/test_notebooks/").glob("*.ipynb"))[:3]
 
     benchmark = ErrorSolvingBenchmark()
-    agent = init_agent()
+    prompt_config = OmegaConf.load("prompts/fix_error_prompt_custom.yaml")
+    agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
 
     container = SafeDockerContainer(docker_params)
     with container:

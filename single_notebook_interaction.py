@@ -5,7 +5,7 @@ import docker
 from omegaconf import OmegaConf
 
 from src import ROOT_PATH
-from src.agents.agents import GrazieChatAgent, BaseAgent
+from src.agents.agents import GrazieChatAgent
 from src.benchmark.solving_benchmark import ErrorSolvingSingleNotebookBenchmark
 from src.preprocessing.selenium_notebook import SeleniumNotebook
 
@@ -26,12 +26,6 @@ class SafeDockerContainer:
         self.container.remove()
 
 
-def init_agent() -> BaseAgent:
-    prompt_config = OmegaConf.load("prompts/fix_error_prompt_custom.yaml")
-    agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
-    return agent
-
-
 if __name__ == "__main__":
     benchmark = ErrorSolvingSingleNotebookBenchmark()
     notebook_path = Path("data/test_notebooks/NameError_list_of_lists_to_list.ipynb")
@@ -44,7 +38,9 @@ if __name__ == "__main__":
         "detach": True,
     }
 
-    agent = init_agent()
+    prompt_config = OmegaConf.load("prompts/fix_error_prompt_custom.yaml")
+    agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
+
     container = SafeDockerContainer(docker_params)
     with container:
         notebook = SeleniumNotebook(
