@@ -1,7 +1,11 @@
+import io
+import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Self
+from typing import Optional, Self, Any
+
+from tqdm import tqdm
 
 from src import ROOT_PATH
 from src.preprocessing.process_notebook import notebook_to_string
@@ -11,12 +15,12 @@ from src.preprocessing.process_notebook import notebook_to_string
 class Cell:
     cell_num: int
     cell_source: str
-    cell_output: Optional[str] = None
+    cell_output: Optional[dict[str, str]] = None
 
 
 class NotebookBase(ABC):
     @abstractmethod
-    def execute_cell(self, cell_num: int) -> Cell:
+    def execute_cell(self, **kwargs: Any) -> Cell:
         pass
 
     @abstractmethod
@@ -46,8 +50,53 @@ class StringNotebook(NotebookBase):
         ]
         return cells
 
-    def execute_cell(self, cell_num: int) -> Cell:
-        pass
+    def _prepare_source(self, execution_list: list[Cell]) -> str:
+        return self.sep.join([cell.cell_source for cell in execution_list])
+
+    def _prepare_execution_list(
+        self, exclude_indices: Optional[list[int]] = None
+    ) -> list[Cell]:
+        exclude_indices = exclude_indices if exclude_indices is not None else []
+        return list(filter(lambda x: x.cell_num not in exclude_indices, self.cells))
+
+    def execute_cell(self, execution_list: list[Cell]) -> Cell:
+        code = self._prepare_source(execution_list)
+        stdout, stderr = io.StringIO(), io.StringIO()
+
+        prev_stdout, prev_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = stdout, stderr
+
+        cell_output = {"text": None, "error": None}
+        try:
+            exec(code)
+        except Exception as e:
+            cell_output["error"] = e
+        finally:
+            cell = execution_list[-1]
+            cell_output["text"] = stdout.getvalue()
+            cell.cell_output = cell_output
+
+            sys.stdout, sys.stderr = prev_stdout, prev_stderr
+            stdout.close()
+            stderr.close()
+
+            return cell
+
+    def execute_all(
+        self, progress_bar: bool = True, exclude_indices: Optional[list[int]] = None
+    ) -> tuple[bool, Optional[int]]:
+        execution_list = self._prepare_execution_list(exclude_indices=exclude_indices)
+        gen = enumerate(execution_list)
+        gen = tqdm(gen) if progress_bar else gen
+
+        for idx, _ in gen:
+            cell_sequence = execution_list[: idx + 1]
+            resulted_cell = self.execute_cell(cell_sequence)
+
+            if resulted_cell.cell_output.get("error", None) is not None:
+                print(f"Cell with num {idx} caused an error")
+                return False, resulted_cell.cell_num
+        return True, None
 
     def add_cell(self, cell_source: str) -> Self:
         new_cell = Cell(cell_num=len(self.cells), cell_source=cell_source)
@@ -55,7 +104,9 @@ class StringNotebook(NotebookBase):
         return self
 
     def change_cell(self, cell_num: int, new_cell_source: str) -> Self:
-        self.cells[cell_num] = Cell(cell_num=cell_num, cell_source=new_cell_source)
+        cell = self.cells[cell_num]
+        cell.cell_source = new_cell_source
+        self.cells[cell.cell_num] = cell
         return self
 
     def __getitem__(self, cell_num: int) -> Cell:
@@ -71,14 +122,20 @@ class StringNotebook(NotebookBase):
 
 
 if __name__ == "__main__":
-    ntb_path = Path(ROOT_PATH / "data/test_notebooks/test_notebook.ipynb")
-    test_string, test_end = "print('hello world!')", f"\n{'='*10}\n"
+    ntb_path = Path(ROOT_PATH / "data/test_notebooks/test_notebook_2.ipynb")
+    test_string, test_end, ex_ind = (
+        "print('hello world!')",
+        f"\n{'='*10}\n",
+        [],
+    )
 
     ntb = StringNotebook(ntb_path)
     print(ntb, end=test_end)
 
-    ntb = ntb.add_cell(test_string)
-    print(ntb, end=test_end)
+    res, n = ntb.execute_all()
+    print(res, n)
 
-    ntb = ntb.change_cell(0, test_string)
-    print(ntb, end=test_end)
+    if n is not None:
+        ex_ind.append(n)
+        res, n = ntb.execute_all(exclude_indices=ex_ind)
+        print(res, n)

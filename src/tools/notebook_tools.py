@@ -7,7 +7,8 @@ class ExecuteCell(BaseTool):
     description: str = "..."
 
     def _run(self, notebook: NotebookBase, cell_num: int) -> Cell:
-        return notebook.execute_cell(cell_num)
+        _, output = notebook.execute_cell(notebook.cells[cell_num])
+        return output
 
 
 class ChangeCellSource(BaseTool):
@@ -17,7 +18,9 @@ class ChangeCellSource(BaseTool):
     def _run(
         self, notebook: NotebookBase, cell_num: int, cell_source: str
     ) -> NotebookBase:
-        return notebook.change_cell(cell_num, cell_source)
+        notebook.change_cell(cell_num, cell_source)
+        _, output = notebook.execute_cell(notebook.cells[cell_num])
+        return output
 
 
 class AddNewCell(BaseTool):
@@ -25,6 +28,9 @@ class AddNewCell(BaseTool):
     description: str = "..."
 
     def _run(self, notebook: NotebookBase, cell_source: str) -> NotebookBase:
+        notebook.add_cell()
+        notebook.change_cell(-1, cell_source)
+        _, output = notebook.execute_cell(notebook.cells[-1])
         return notebook.add_cell(cell_source)
 
 
