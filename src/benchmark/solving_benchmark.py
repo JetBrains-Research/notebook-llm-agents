@@ -17,9 +17,7 @@ log = logging.getLogger(__name__)
 
 class ErrorSolvingPipeline:
     @staticmethod
-    def find_error(
-        notebook: SeleniumNotebook, restart_kernel: bool = True
-    ) -> int | None:
+    def find_error(notebook: SeleniumNotebook, restart_kernel: bool = True) -> int | None:
         if restart_kernel:
             notebook.restart_kernel()
 
@@ -50,9 +48,7 @@ class ErrorSolvingPipeline:
         return interaction_output
 
     @staticmethod
-    def check_solution(
-        error_cell_num: int, notebook: SeleniumNotebook, restart_kernel: bool = False
-    ) -> bool:
+    def check_solution(error_cell_num: int, notebook: SeleniumNotebook, restart_kernel: bool = False) -> bool:
         if restart_kernel:
             notebook.restart_kernel()
 
@@ -60,9 +56,7 @@ class ErrorSolvingPipeline:
         success = not error
         return success
 
-    def run(
-        self, agent: BaseAgent, notebook: SeleniumNotebook, max_iterations: int = 5
-    ) -> bool:
+    def run(self, agent: BaseAgent, notebook: SeleniumNotebook, max_iterations: int = 5) -> bool:
         step, output = 0, None
         error_cell_num = self.find_error(notebook, restart_kernel=True)
         if error_cell_num is None:
@@ -73,9 +67,7 @@ class ErrorSolvingPipeline:
             output = self.solve_error(step, error_cell_num, agent, notebook, output)
 
             if output == "[finish_function]":
-                return self.check_solution(
-                    error_cell_num, notebook, restart_kernel=False
-                )
+                return self.check_solution(error_cell_num, notebook, restart_kernel=False)
             step += 1
 
         return False
