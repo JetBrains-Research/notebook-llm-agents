@@ -42,7 +42,7 @@ class SeleniumNotebook(NotebookBase):
         self.driver = None
 
     def __enter__(self):
-        log.info("[START_SESSION]")
+        log.info("[START_SESSION] START")
         sleep_time: float = 5.0
         service = Service(executable_path=str(self.driver_path))
         options = webdriver.ChromeOptions()
@@ -56,7 +56,7 @@ class SeleniumNotebook(NotebookBase):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        log.info("[FINISH_SESSION]")
+        log.info("[FINISH_SESSION] FINISH")
         self.driver.quit()
 
     @property
@@ -140,7 +140,7 @@ class SeleniumNotebook(NotebookBase):
         actions.perform()
         log.info(f"[ACTION] CHANGE SOURCE OF CELL {cell_num} ")
 
-        sleep(1)
+        sleep(0.5)
 
     def __getitem__(self, cell_num: int):
         if cell_num >= len(self.cells):

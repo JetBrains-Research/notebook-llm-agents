@@ -88,6 +88,7 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
         selenium_notebook: SeleniumNotebook = None,
         comment_finish: bool = True,
         save_solved: bool = True,
+        save_name: str = "benchmark_datalore",
         sleep_time: Optional[int] = 5,
         **kwargs,
     ) -> bool:
@@ -98,6 +99,9 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
         with selenium_notebook as notebook:
             try:
                 success = pipeline.run(agent, notebook)
+            except Exception as e:
+                print(e)
+                logging.info(f"[INTERNAL_ERROR] {e}")
             finally:
                 message = (
                     "[SOLVED] Error successfully solved".upper()
@@ -112,9 +116,12 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
 
                 if success and save_solved:
                     # TODO: Think about remove from here
+                    save_path = ROOT_PATH / "data/processed_notebooks" / save_name
+                    if not save_path.exists():
+                        save_path.mkdir(exist_ok=True)
                     string_to_notebook(
                         str(notebook),
-                        ROOT_PATH / "data/processed_notebooks",
+                        save_path,
                         "solved_" + notebook.notebook_path.name,
                     )
 
@@ -137,11 +144,18 @@ class ErrorSolvingBenchmark(BaseBenchmark):
         results = []
 
         for notebook_path in notebook_path_list:
-            notebook = SeleniumNotebook(
-                notebook_path=notebook_path,
-                **notebook_environment_params,
-            )
-            success = binary_benchmark.evaluate(agent, notebook)
-            results.append(success)
+            try:
+                agent.init_chat()
+                notebook = SeleniumNotebook(
+                    notebook_path=notebook_path,
+                    **notebook_environment_params,
+                )
+                success = binary_benchmark.evaluate(agent, notebook)
+                results.append(success)
+            except Exception as e:
+                print(e)
+                results.append(False)
+            finally:
+                continue
 
         return sum(results) / len(results)

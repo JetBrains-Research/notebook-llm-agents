@@ -1,6 +1,7 @@
 import json
 import logging
 from abc import ABC, abstractmethod
+from copy import copy
 from typing import Any
 
 from grazie.api.client.chat.prompt import ChatPrompt
@@ -100,7 +101,7 @@ class GrazieChatAgent(BaseAgent):
                 name="grazie-api-gateway-client-readme", version="dev"
             ),
             url=GrazieApiGatewayUrls.STAGING,
-            auth_type=AuthType.USER,
+            auth_type=AuthType.SERVICE,
             grazie_jwt_token=token,
         )
         self.profile = profile
@@ -117,16 +118,30 @@ class GrazieChatAgent(BaseAgent):
         )
         self.error_cell_num = None
 
+    def init_chat(self):
+        prompt = (
+            self.prompt.get("system_prompt")
+            + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
+        )
+        self.chat = ChatPrompt().add_system(prompt)
+
     def interact(self, notebook: NotebookBase, output=None, **requests: Any):
         if output is not None:
-            self.chat = self.chat.add_user(f"------\n Output is {output}\n------\n")
+            message = f"------\n Output is {output}\n------\n"
+            self.chat = self.chat.add_user(message)
+
+            log_message = message.replace("\n", "<line_sep>")
+            logging.info(f"[CONTEXT] {log_message}")
+
         elif requests is not None:
             if "cell_num" in requests:
                 self.error_cell_num = requests["cell_num"]
 
-            self.chat = self.chat.add_user(
-                self.prompt.get("user_prompt").format(**requests)
-            )
+            message = self.prompt.get("user_prompt").format(**requests)
+            self.chat = self.chat.add_user(message)
+
+            log_message = message.replace("\n", "<line_sep>")
+            logging.info(f"[CONTEXT] {log_message}")
 
         response = self.client.chat(
             chat=self.chat,
@@ -135,8 +150,11 @@ class GrazieChatAgent(BaseAgent):
         )
 
         params = json.loads(response.content)
-        log.info(f"[FUNC] {response.function_call}")
-        log.info(f"[FUNC PARAMS] {params}")
+
+        # Logging function call and its parameters
+        params_log = copy(params)
+        params_log["function_name"] = response.function_call
+        log.info(f"[FUNC] {params_log}")
 
         if response.function_call == "finish":
             return "[finish_function]"
