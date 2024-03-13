@@ -25,9 +25,7 @@ def get_last_line(log_file_path: Path) -> str:
         return lines[-1] if lines else None
 
 
-def file_update_check(
-    log_file_path: Path = Path("logs/log.log"), sleep_time: float = 0.01
-):
+def file_update_check(log_file_path: Path = Path("logs/log.log"), sleep_time: float = 0.01):
     while True:
         if line := get_last_line(log_file_path):
             yield line
@@ -115,18 +113,12 @@ def display_message(log: pd.Series):
 
 def live_chat(gen: Generator):
     last_message = next(gen)
-    if (
-        not len(st.session_state.logs)
-        or last_message != st.session_state.logs[-1]["raw_message"]
-    ):
+    if not len(st.session_state.logs) or last_message != st.session_state.logs[-1]["raw_message"]:
         log = LogLine(last_message).to_series()
 
         if log.action_type == ActionType.START_SESSION:
             reset_chat()
-        elif (
-            log.action_type == ActionType.FINISH_SESSION
-            and len(st.session_state.logs) > 1
-        ):
+        elif log.action_type == ActionType.FINISH_SESSION and len(st.session_state.logs) > 1:
             st.session_state.run = False
         elif log.action_type == ActionType.CONTEXT:
             return
@@ -140,10 +132,7 @@ def live_chat(gen: Generator):
 
 def live_context(gen: Generator):
     last_message = next(gen)
-    if (
-        not len(st.session_state.context)
-        or last_message != st.session_state.context[-1]["raw_message"]
-    ):
+    if not len(st.session_state.context) or last_message != st.session_state.context[-1]["raw_message"]:
         log = LogLine(last_message).to_series()
 
         if log.action_type in [ActionType.CONTEXT, ActionType.FUNC]:
@@ -154,9 +143,7 @@ def live_context(gen: Generator):
             with st.chat_message(name=role, avatar=role_avatars[role]):
                 message = log.source.replace("<line_sep>", "\n\n")
                 max_log_source = 150
-                msg_processor = (
-                    st.json if log.action_type == ActionType.FUNC else st.write
-                )
+                msg_processor = st.json if log.action_type == ActionType.FUNC else st.write
                 if len(message) < max_log_source:
                     msg_processor(message)
                 else:

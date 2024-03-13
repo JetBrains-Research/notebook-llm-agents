@@ -6,16 +6,16 @@ from typing import Any
 
 from grazie.api.client.chat.prompt import ChatPrompt
 from grazie.api.client.endpoints import GrazieApiGatewayUrls
-from grazie.api.client.gateway import GrazieApiGatewayClient, AuthType, GrazieAgent
+from grazie.api.client.gateway import AuthType, GrazieAgent, GrazieApiGatewayClient
 from grazie.api.client.llm_functions import FunctionDefinition
 from grazie.api.client.llm_parameters import LLMParameters
 from grazie.api.client.parameters import Parameters
-from grazie.api.client.profiles import Profile, LLMProfile
+from grazie.api.client.profiles import LLMProfile, Profile
 from omegaconf import DictConfig, OmegaConf
 
 from src import ROOT_PATH
 from src.preprocessing.notebook import NotebookBase
-from src.tools.notebook_tools import ChangeCellSource, AddNewCell, ExecuteCell
+from src.tools.notebook_tools import AddNewCell, ChangeCellSource, ExecuteCell
 
 log = logging.getLogger(__name__)
 
@@ -97,9 +97,7 @@ class GrazieChatAgent(BaseAgent):
         profile: LLMProfile = AVAILABLE_MODELS["gpt_4"],
     ):
         self.client = GrazieApiGatewayClient(
-            grazie_agent=GrazieAgent(
-                name="grazie-api-gateway-client-readme", version="dev"
-            ),
+            grazie_agent=GrazieAgent(name="grazie-api-gateway-client-readme", version="dev"),
             url=GrazieApiGatewayUrls.STAGING,
             auth_type=AuthType.SERVICE,
             grazie_jwt_token=token,
@@ -113,16 +111,12 @@ class GrazieChatAgent(BaseAgent):
             "add_cell": AddNewCell(),
         }
         self.chat = ChatPrompt().add_system(
-            self.prompt.get("system_prompt")
-            + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
+            self.prompt.get("system_prompt") + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
         )
         self.error_cell_num = None
 
     def init_chat(self):
-        prompt = (
-            self.prompt.get("system_prompt")
-            + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
-        )
+        prompt = self.prompt.get("system_prompt") + "\nYOU MUST WRITE ONLY FUNCTION PARAMETERS"
         self.chat = ChatPrompt().add_system(prompt)
 
     def interact(self, notebook: NotebookBase, output=None, **requests: Any):

@@ -21,11 +21,7 @@ def notebook_to_string(
 ) -> str:
     notebook = read_notebook(notebook_path)
     notebook_string = sep.join(
-        [
-            cell.get("source")
-            for cell in notebook.get("cells")
-            if cell.get("cell_type") == "code"
-        ]
+        [cell.get("source") for cell in notebook.get("cells") if cell.get("cell_type") == "code"]
     )
 
     if processed_folder_path is not None:

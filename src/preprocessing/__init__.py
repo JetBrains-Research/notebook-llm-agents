@@ -1,6 +1,4 @@
-PROGRESS_EXECUTION_ELEMENT: str = (
-    ".//*[contains(text(), '[*]') or contains(text(), 'In [*]')]"
-)
+PROGRESS_EXECUTION_ELEMENT: str = ".//*[contains(text(), '[*]') or contains(text(), 'In [*]')]"
 INSERT_CELL_BELOW_ELEMENT: str = '//button[@data-command="notebook:insert-cell-below"]'
 CELL_ELEMENT: str = (
     "//div[contains(@class, 'lm-Widget') and contains(@class, 'jp-Cell') "

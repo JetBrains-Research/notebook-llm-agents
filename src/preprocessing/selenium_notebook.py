@@ -12,12 +12,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 
 from src.preprocessing import (
-    PROGRESS_EXECUTION_ELEMENT,
+    CELL_EDIT_AREA,
+    CELL_ELEMENT,
+    CELL_OUTPUT_AREA,
     INSERT_CELL_BELOW_ELEMENT,
     LAST_CELL_ELEMENT,
-    CELL_EDIT_AREA,
-    CELL_OUTPUT_AREA,
-    CELL_ELEMENT,
+    PROGRESS_EXECUTION_ELEMENT,
 )
 from src.preprocessing.notebook import NotebookBase
 
@@ -99,14 +99,8 @@ class SeleniumNotebook(NotebookBase):
         error = True if traceback_message in output else False
         return error, output
 
-    def add_cell(
-        self, current_cell: Optional[WebElement] = None, sleep_time: float = 0.5
-    ):
-        cell = (
-            current_cell
-            if current_cell is not None
-            else self.driver.find_element(By.XPATH, LAST_CELL_ELEMENT)
-        )
+    def add_cell(self, current_cell: Optional[WebElement] = None, sleep_time: float = 0.5):
+        cell = current_cell if current_cell is not None else self.driver.find_element(By.XPATH, LAST_CELL_ELEMENT)
         cell.click()
         self.driver.find_element(By.XPATH, INSERT_CELL_BELOW_ELEMENT).click()
         log.info("[ACTION] CREATE CELL")
@@ -131,9 +125,7 @@ class SeleniumNotebook(NotebookBase):
 
         actions.move_to_element(edit_area).click(edit_area)
 
-        actions.key_down(Keys.COMMAND).send_keys("a").key_up(Keys.COMMAND).send_keys(
-            Keys.BACKSPACE
-        )
+        actions.key_down(Keys.COMMAND).send_keys("a").key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE)
 
         actions.send_keys(new_cell_content)
 
@@ -144,9 +136,7 @@ class SeleniumNotebook(NotebookBase):
 
     def __getitem__(self, cell_num: int):
         if cell_num >= len(self.cells):
-            raise IndexError(
-                f"Unexpected index number in list with size {len(self.cells)}"
-            )
+            raise IndexError(f"Unexpected index number in list with size {len(self.cells)}")
 
         return self.cells[cell_num]
 

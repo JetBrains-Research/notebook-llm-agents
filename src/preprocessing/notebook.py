@@ -3,7 +3,7 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Self, Any
+from typing import Any, Optional, Self
 
 from tqdm import tqdm
 
@@ -44,18 +44,13 @@ class StringNotebook(NotebookBase):
     @staticmethod
     def _parse_notebook(notebook_path: Path, sep: str) -> list[Cell]:
         notebook_source = notebook_to_string(notebook_path, sep=sep)
-        cells = [
-            Cell(cell_num=num, cell_source=source)
-            for num, source in enumerate(notebook_source.split(sep))
-        ]
+        cells = [Cell(cell_num=num, cell_source=source) for num, source in enumerate(notebook_source.split(sep))]
         return cells
 
     def _prepare_source(self, execution_list: list[Cell]) -> str:
         return self.sep.join([cell.cell_source for cell in execution_list])
 
-    def _prepare_execution_list(
-        self, exclude_indices: Optional[list[int]] = None
-    ) -> list[Cell]:
+    def _prepare_execution_list(self, exclude_indices: Optional[list[int]] = None) -> list[Cell]:
         exclude_indices = exclude_indices if exclude_indices is not None else []
         return list(filter(lambda x: x.cell_num not in exclude_indices, self.cells))
 
@@ -111,9 +106,7 @@ class StringNotebook(NotebookBase):
 
     def __getitem__(self, cell_num: int) -> Cell:
         if cell_num >= len(self.cells):
-            raise IndexError(
-                f"Unexpected index number in list with size {len(self.cells)}"
-            )
+            raise IndexError(f"Unexpected index number in list with size {len(self.cells)}")
 
         return self.cells[cell_num]
 

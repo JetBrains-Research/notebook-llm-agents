@@ -1,5 +1,6 @@
 from langchain.tools import BaseTool
-from src.preprocessing.notebook import NotebookBase, Cell
+
+from src.preprocessing.notebook import Cell, NotebookBase
 
 
 class ExecuteCell(BaseTool):
@@ -15,9 +16,7 @@ class ChangeCellSource(BaseTool):
     name: str = "Change cell source"
     description: str = "..."
 
-    def _run(
-        self, notebook: NotebookBase, cell_num: int, cell_source: str
-    ) -> NotebookBase:
+    def _run(self, notebook: NotebookBase, cell_num: int, cell_source: str) -> NotebookBase:
         notebook.change_cell(cell_num, cell_source)
         _, output = notebook.execute_cell(notebook.cells[cell_num])
         return output
