@@ -49,7 +49,7 @@ if __name__ == "__main__":
                 cell_amount=len(notebook.cells),
                 cell_num=error_cell_num,
             )
-            agent = ProxyAgent(token=os.environ["GRAZIE_TOKEN"])
+            agent = ProxyAgent(token=os.environ["GRAZIE_TOKEN"], url="http://localhost:8000/request")
             router = Router(agent=agent, environment=notebook)
 
             while not success:
@@ -60,6 +60,6 @@ if __name__ == "__main__":
                     success = True
                     break
 
-                message = input()
+                message = input("Print message to agent")
                 if not message:
                     message = env_response

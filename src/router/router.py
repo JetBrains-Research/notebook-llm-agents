@@ -65,8 +65,6 @@ class Router:
         self.agent.interact(instruction)
 
     def route(self, prompt: str):
-        agent_response = self.agent.interact(prompt=prompt)
-
         iterations = 0
         agent_instruction = None
         while (agent_instruction is None) and iterations < 5:
@@ -74,8 +72,6 @@ class Router:
             agent_instruction = self.parse_agent_response(agent_response)
             iterations += 1
 
-        print(agent_response)
-        print(agent_instruction)
         if agent_instruction is None:
             raise Exception("Agent did not respond")
         elif agent_instruction["tool"] == "finish":

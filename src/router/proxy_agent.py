@@ -11,10 +11,12 @@ class ProxyAgent(BaseAgent):
     def __init__(
         self,
         token: str,
+        url: str = "https://cloud-ideformer.labs.jb.gg/service/v5/ideformer",
         profile: LLMProfile = Profile.OPENAI_GPT_4,
     ):
         self.profile = profile
         self.token = token
+        self.url = url
 
     def _construct_request(self, prompt: str) -> Tuple[Dict[str, str], Dict[str, str]]:
         headers = {
@@ -34,7 +36,6 @@ class ProxyAgent(BaseAgent):
         return headers, body
 
     def interact(self, prompt: str = "", **kwargs: Any) -> Dict:
-        url = "https://cloud-ideformer.labs.jb.gg/service/v5/ideformer"
         headers, body = self._construct_request(prompt)
-        response = requests.post(url, headers=headers, json=body)
+        response = requests.post(self.url, headers=headers, json=body)
         return response.json()
