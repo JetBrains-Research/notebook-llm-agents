@@ -54,17 +54,28 @@ class ErrorSolvingPipeline:
 
         error, _ = notebook.execute_cell(notebook.cells[error_cell_num])
         success = not error
+
         return success
 
-    def run(self, agent: BaseAgent, notebook: SeleniumNotebook, max_iterations: int = 5) -> bool:
+    def run(self, agent: BaseAgent, notebook: SeleniumNotebook, max_iterations: int = 5, debug: bool = True) -> bool:
         step, output = 0, None
+
+        if debug:
+            input("PUSH TO CONTINUE")
+
         error_cell_num = self.find_error(notebook, restart_kernel=True)
         if error_cell_num is None:
             return True
 
+        if debug:
+            input("PUSH TO CONTINUE")
+
         while step < max_iterations:
             log.info(f"[STEP] Step {step} started")
             output = self.solve_error(step, error_cell_num, agent, notebook, output)
+
+            if debug:
+                input("PUSH TO CONTINUE")
 
             if output == "[finish_function]":
                 return self.check_solution(error_cell_num, notebook, restart_kernel=False)
@@ -82,6 +93,7 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
         save_solved: bool = True,
         save_name: str = "benchmark_datalore",
         sleep_time: Optional[int] = 5,
+        debug: bool = True,
         **kwargs,
     ) -> bool:
         if selenium_notebook is None:
@@ -90,7 +102,7 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
         pipeline, success = ErrorSolvingPipeline(), False
         with selenium_notebook as notebook:
             try:
-                success = pipeline.run(agent, notebook)
+                success = pipeline.run(agent, notebook, debug=debug)
             except Exception as e:
                 print(e)
                 logging.info(f"[INTERNAL_ERROR] {e}")
@@ -101,10 +113,15 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
                     else "[NOT SOLVED] Agent couldn't solve the error".upper()
                 )
                 log.info(message)
+                if debug:
+                    input("PUSH TO CONTINUE")
 
                 if comment_finish:
                     notebook.add_cell()
                     notebook.change_cell(-1, f"# {message}")
+
+                if debug:
+                    input("PUSH TO CONTINUE")
 
                 if success and save_solved:
                     # TODO: Think about remove from here

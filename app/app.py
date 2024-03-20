@@ -42,10 +42,11 @@ class ActionType(Enum):
     ACTION = 2
     ERROR = 3
     INTERNAL_ERROR = 4
-    FUNC = 5
-    CONTEXT = 6
-    SOLVED = 7
-    FINISH_SESSION = 8
+    STEP = 5
+    FUNC = 6
+    CONTEXT = 7
+    SOLVED = 8
+    FINISH_SESSION = 9
 
 
 class LogLine:

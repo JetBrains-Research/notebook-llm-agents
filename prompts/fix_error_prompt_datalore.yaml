@@ -6,15 +6,13 @@ system_prompt: >
   2.If you think you failed to solve the task - you MUST call reverse_last_api_methods and reverse your steps, so you can try another way of solving the task. It is often good strategy to reverse all your steps to start from scratch (reversing 100-1000 steps is a good way to do it)
   3.In case if you failed and restarted - you need to follow different various paths, other than you already tried, in order to find the solution
 
-
 user_prompt: >
-  Here's a Jupyter notebook. It uses `\n#%% --\n` as a separator between cells. 
+  Here's a Jupyter notebook. It uses `\n#%% --\n` as a separator between cells.
   {notebook_source}
 
   -----
+  Error occurred in cell with num {cell_num}. The error trace is the following:
   {error_trace}
-  
+  -----
   Modify the code to implement the following task:
-  Fix an error. Note that cell starting enumerate from 0. Totally notebook contains {cell_number} cells.
-
-#  First write your thoughts in not more than 3 sentences, then write the whole modified code cell.
+  Fix an error. Note that cell starting enumerate from 0.

@@ -150,6 +150,9 @@ class GrazieChatAgent(BaseAgent):
         params_log["function_name"] = response.function_call
         log.info(f"[FUNC] {params_log}")
 
+        if True:
+            input("PUSH TO CONTINUE")
+
         if response.function_call == "finish":
             return "[finish_function]"
 
