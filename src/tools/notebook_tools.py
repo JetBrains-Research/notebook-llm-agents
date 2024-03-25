@@ -1,6 +1,32 @@
 from langchain.tools import BaseTool
 
 from src.preprocessing.notebook import Cell, NotebookBase
+from src.preprocessing.selenium_notebook import SeleniumNotebook
+
+
+class NotebookTools:
+    def __init__(self, notebook: SeleniumNotebook):
+        self.notebook = notebook
+
+    def create_cell(self, cell_source: str):
+        self.notebook.add_cell()
+        self.notebook.change_cell(-1, cell_source)
+
+        last_cell = self.notebook.cells[-1]
+        error, output = self.notebook.execute_cell(last_cell)
+        return error, output
+
+    def change_source(self, cell_num: int, cell_source: str):
+        self.notebook.change_cell(cell_num, cell_source)
+
+        cell = self.notebook.cells[cell_num]
+        error, output = self.notebook.execute_cell(cell)
+        return error, output
+
+    def execute_cell(self, cell_number: int):
+        cell = self.notebook.cells[cell_number]
+        error, output = self.notebook.execute_cell(cell)
+        return error, output
 
 
 class ExecuteCell(BaseTool):

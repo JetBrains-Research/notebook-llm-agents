@@ -1,0 +1,39 @@
+Here's a Jupyter notebook. Totally notebook contains 7 cells. Note that cell starting enumerate from 0.
+It uses `\n#%% --\n` as a separator between cells.
+
+from sys import getsizeof
+#%% --
+# list comprehension
+list_comp = [i**3 for i in ["1", "2", "3"]]
+# generator expression
+gen_comp = (i**3 for i in range(10000))
+#%% --
+# size of list comprehension
+a = getsizeof(list_comp)
+print("Size of list is : ", a)
+#%% --
+#size of generator expression
+b = getsizeof(gen_comp)
+print("Size of generator is : ", b)
+#%% --
+# time taken by list comprehension
+import timeit
+print(timeit.timeit('''list_com = [i for i in range(100) if i % 2 == 0]'''))
+#%% --
+# time taken by generator expression
+print(timeit.timeit('''list_com = (i for i in range(100) if i % 2 == 0)'''))
+#%% --
+
+----- Error occurred in cell with num 1. The error trace is the following: ---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In[2], line 2
+      1 # list comprehension
+----> 2 list_comp = [i**3 for i in ["1", "2", "3"]]
+      3 # generator expression
+      4 gen_comp = (i**3 for i in range(10000))
+
+Cell In[2], line 2, in <listcomp>(.0)
+      1 # list comprehension
+----> 2 list_comp = [i**3 for i in ["1", "2", "3"]]
+      3 # generator expression
+      4 gen_comp = (i**3 for i in range(10000))

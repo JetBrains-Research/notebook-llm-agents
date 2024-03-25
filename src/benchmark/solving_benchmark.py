@@ -6,8 +6,8 @@ from typing import Optional
 from dotenv import load_dotenv
 
 from src import ROOT_PATH
-from src.agents.agents import BaseAgent
 from src.benchmark.base_benchmark import BaseBenchmark
+from src.manager.conversation_manager import ConversationManager
 from src.preprocessing.process_notebook import string_to_notebook
 from src.preprocessing.selenium_notebook import SeleniumNotebook
 
@@ -28,24 +28,46 @@ class ErrorSolvingPipeline:
     def solve_error(
         step: int,
         error_cell_num: int,
-        agent: BaseAgent,
-        notebook: SeleniumNotebook,
+        manager: ConversationManager,
+        session_uuid: str = "",
         previous_output: Optional[str] = None,
     ):
-        error_trace = notebook.get_cell_output(notebook.cells[error_cell_num])
-        if not error_trace and step == 0:
-            raise ValueError("Provided cell doesn't contain error output")
+        notebook: SeleniumNotebook = manager.environment
 
-        notebook_source = str(notebook)
-        interaction_output = agent.interact(
-            notebook=notebook,
-            output=previous_output,
-            notebook_source=notebook_source,
-            error_trace=error_trace,
-            cell_amount=len(notebook.cells),
-            cell_num=error_cell_num,
-        )
-        return interaction_output
+        if step == 0:
+            error_trace = notebook.get_cell_output(notebook.cells[error_cell_num])
+            if not error_trace:
+                raise ValueError("Provided cell doesn't contain error output")
+
+            notebook_source = str(notebook)
+
+            agent_response = manager.interact(
+                prompt="",
+                session_uuid=session_uuid,
+                first=True,
+                notebook_source=notebook_source,
+                error_trace=error_trace,
+                cell_amount=len(notebook.cells),
+                cell_num=error_cell_num,
+            )
+
+        else:
+            agent_response = manager.interact(
+                prompt=previous_output,
+                session_uuid=session_uuid,
+            )
+
+        function_call = manager.parse_agent_response(agent_response)
+        session_uuid = function_call.get("session_uuid")
+
+        if function_call.get("tool") == "finish":
+            return "[finish_function]", session_uuid
+
+        error, env_response = manager.execute_tools(function_call)
+        env_response = manager.parse_environment_response(env_response)
+        output = manager.create_instruction(env_response)
+
+        return output, session_uuid
 
     @staticmethod
     def check_solution(error_cell_num: int, notebook: SeleniumNotebook, restart_kernel: bool = False) -> bool:
@@ -57,12 +79,13 @@ class ErrorSolvingPipeline:
 
         return success
 
-    def run(self, agent: BaseAgent, notebook: SeleniumNotebook, max_iterations: int = 5, debug: bool = True) -> bool:
+    def run(self, manager: ConversationManager, max_iterations: int = 5, debug: bool = False) -> bool:
         step, output = 0, None
 
         if debug:
             input("PUSH TO CONTINUE")
 
+        notebook: SeleniumNotebook = manager.environment
         error_cell_num = self.find_error(notebook, restart_kernel=True)
         if error_cell_num is None:
             return True
@@ -70,9 +93,16 @@ class ErrorSolvingPipeline:
         if debug:
             input("PUSH TO CONTINUE")
 
+        session_uuid = ""
         while step < max_iterations:
             log.info(f"[STEP] Step {step} started")
-            output = self.solve_error(step, error_cell_num, agent, notebook, output)
+            output, session_uuid = self.solve_error(
+                step=step,
+                session_uuid=session_uuid,
+                error_cell_num=error_cell_num,
+                manager=manager,
+                previous_output=output,
+            )
 
             if debug:
                 input("PUSH TO CONTINUE")
@@ -87,22 +117,22 @@ class ErrorSolvingPipeline:
 class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
     def evaluate(
         self,
-        agent: BaseAgent,
-        selenium_notebook: SeleniumNotebook = None,
+        manager: ConversationManager,
         comment_finish: bool = True,
         save_solved: bool = True,
-        save_name: str = "benchmark_datalore",
+        save_name: str = "benchmark_ideformer",
         sleep_time: Optional[int] = 5,
-        debug: bool = True,
+        debug: bool = False,
         **kwargs,
     ) -> bool:
+        selenium_notebook: SeleniumNotebook = manager.environment
         if selenium_notebook is None:
             raise ValueError("Notebook environment wasn't provided")
 
         pipeline, success = ErrorSolvingPipeline(), False
         with selenium_notebook as notebook:
             try:
-                success = pipeline.run(agent, notebook, debug=debug)
+                success = pipeline.run(manager, debug=debug)
             except Exception as e:
                 print(e)
                 logging.info(f"[INTERNAL_ERROR] {e}")
@@ -117,8 +147,8 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
                     input("PUSH TO CONTINUE")
 
                 if comment_finish:
-                    notebook.add_cell()
-                    notebook.change_cell(-1, f"# {message}")
+                    selenium_notebook.add_cell()
+                    selenium_notebook.change_cell(-1, f"# {message}")
 
                 if debug:
                     input("PUSH TO CONTINUE")
@@ -142,8 +172,8 @@ class ErrorSolvingSingleNotebookBenchmark(BaseBenchmark):
 class ErrorSolvingBenchmark(BaseBenchmark):
     def evaluate(
         self,
-        agent: BaseAgent,
-        notebook_path_list: Optional[tuple[Path]] = None,
+        manager: ConversationManager,
+        notebook_path_list: Optional[tuple[Path, ...]] = None,
         notebook_environment_params: dict = None,
     ) -> float:
         if notebook_path_list is None:
@@ -153,18 +183,18 @@ class ErrorSolvingBenchmark(BaseBenchmark):
         results = []
 
         for notebook_path in notebook_path_list:
-            try:
-                agent.init_chat()
-                notebook = SeleniumNotebook(
-                    notebook_path=notebook_path,
-                    **notebook_environment_params,
-                )
-                success = binary_benchmark.evaluate(agent, notebook)
-                results.append(success)
-            except Exception as e:
-                print(e)
-                results.append(False)
-            finally:
-                continue
+            # try:
+            notebook = SeleniumNotebook(
+                notebook_path=Path(notebook_path),
+                **notebook_environment_params,
+            )
+            manager.init_environment(environment=notebook)
+            success = binary_benchmark.evaluate(manager=manager)
+            results.append(success)
+            # except Exception as e:
+            #     print(e)
+            #     results.append(False)
+            # finally:
+            #     continue
 
         return sum(results) / len(results)

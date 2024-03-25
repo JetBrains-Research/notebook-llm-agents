@@ -24,13 +24,9 @@ if __name__ == "__main__":
         error_trace = ntb[n].cell_output.get("error")
         print(error_trace)
         ntb_source = ntb.__str__()
-        ntb = agent.interact(
-            notebook=ntb, notebook_source=ntb_source, error_trace=error_trace
-        )
+        ntb = agent.interact(notebook=ntb, notebook_source=ntb_source, error_trace=error_trace)
         step += 1
         success, n = ntb.execute_all()
 
-    string_to_notebook(
-        ntb.__str__(), Path("data/processed_notebooks"), notebook_path.name
-    )
+    string_to_notebook(ntb.__str__(), Path("data/processed_notebooks"), notebook_path.name)
     print(ntb)

@@ -1,8 +1,13 @@
-import json
+import os
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
+from starlette.middleware.cors import CORSMiddleware
+
+from src.agents.proxy_agent import ProxyAgent
+from src.manager.conversation_manager import ConversationManager
 
 
 class ApiContent(BaseModel):
@@ -11,35 +16,35 @@ class ApiContent(BaseModel):
 
 
 class Item(BaseModel):
+    session_uuid: str
     api_content: ApiContent
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+env = load_dotenv()
+agent = ProxyAgent(token=os.environ["GRAZIE_TOKEN"])
+manager = ConversationManager(agent=agent)
 
 
 @app.post("/request/")
-async def request_tool():
-    response_content = input("Please enter response content: ")
+async def request_tool(req: Item):
+    session_uuid = req.session_uuid
+    message_raw = req.api_content.message
 
-    output = {
-        "api_content": {
-            "agent_id": "notebook",
-        }
-    }
-    if response_content == "finish":
-        tool = {
-            "api_name": "finish",
-            "args": {},
-        }
-    else:
-        tool = {
-            "api_name": "create_cell",
-            "args": {"cell_source": f"# {response_content}"},
-        }
-    output["api_content"].update(tool)
+    message = manager.parse_environment_response(message_raw)
+    instruction = manager.create_instruction(message)
 
-    response = {"data": json.dumps(output)}
-    return response
+    agent_response = manager.interact(prompt=instruction, session_uuid=session_uuid)
+    print(agent_response)
+    return agent_response
 
 
 if __name__ == "__main__":

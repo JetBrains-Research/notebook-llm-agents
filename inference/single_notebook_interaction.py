@@ -5,8 +5,9 @@ import docker
 from omegaconf import OmegaConf
 
 from src import ROOT_PATH
-from src.agents.agents import GrazieChatAgent
+from src.agents.proxy_agent import ProxyAgent
 from src.benchmark.solving_benchmark import ErrorSolvingSingleNotebookBenchmark
+from src.manager.conversation_manager import ConversationManager
 from src.preprocessing.selenium_notebook import SeleniumNotebook
 
 
@@ -28,18 +29,12 @@ class SafeDockerContainer:
 
 if __name__ == "__main__":
     benchmark = ErrorSolvingSingleNotebookBenchmark()
-    notebook_path = Path("data/test_notebooks/NameError_list_of_lists_to_list.ipynb")
-    notebook_server = Path("http://localhost:8888/")
 
-    docker_params = {
-        "image": "agent-jupyter-interaction-docker-image",
-        "ports": {"8888/tcp": 8888},
-        "volumes": {ROOT_PATH / "data": {"bind": "/app/data", "mode": "rw"}},
-        "detach": True,
-    }
+    experiment_config = OmegaConf.load(ROOT_PATH / "inference/single_notebook_interaction_config.yaml")
+    docker_params = OmegaConf.to_container(experiment_config.docker_params)
 
-    prompt_config = OmegaConf.load("prompts/fix_error_prompt_custom.yaml")
-    agent = GrazieChatAgent(token=os.environ["GRAZIE_TOKEN"], prompt=prompt_config)
+    notebook_path = Path(experiment_config.notebook_params.notebook_path)
+    notebook_server = Path(experiment_config.notebook_params.notebook_server)
 
     container = SafeDockerContainer(docker_params)
     with container:
@@ -49,5 +44,9 @@ if __name__ == "__main__":
             server=notebook_server,
             headless=False,
         )
-        result = benchmark.evaluate(agent, notebook)
+        prompt_pattern = OmegaConf.load("prompts/fix_error_prompt_custom.yaml").get("user_prompt")
+        agent = ProxyAgent(token=os.environ["GRAZIE_TOKEN"], prompt_pattern=prompt_pattern)
+        manager = ConversationManager(agent=agent, environment=notebook)
+
+        result = benchmark.evaluate(manager, debug=False)
         print(result)

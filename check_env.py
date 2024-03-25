@@ -1,11 +1,12 @@
 import os
+from typing import Tuple
 
 from dotenv import load_dotenv
 
 
 def check_env_variables() -> None:
     _ = load_dotenv()
-    needed_variables = (
+    needed_variables: Tuple[str, ...] = (
         "GRAZIE_TOKEN",
         "CHROMIUM_DRIVER_PATH",
     )
